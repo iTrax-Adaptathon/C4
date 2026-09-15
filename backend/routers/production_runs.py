@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from database import SessionLocal
-from models import ProductionRun, Machine, Material, Operator
+from models import ProductionRun, Machine, Material, Operator, Traceability
 from schemas import ProductionRunCreate
 
 
@@ -182,6 +183,19 @@ def start_production_run(
     material.status = "IN_USE"
 
     operator.status = "WORKING"
+
+    trace_event = Traceability(
+    run_id=run.run_id,
+    material_id=material.material_id,
+    batch_id=material.batch_id,
+    machine_id=machine.machine_id,
+    operator_id=operator.operator_id,
+    event_type="RUN_STARTED",
+    description=f"Production run {run.run_id} started",
+    timestamp=datetime.now()
+)
+
+    db.add(trace_event)
 
     db.commit()
     db.refresh(run)
